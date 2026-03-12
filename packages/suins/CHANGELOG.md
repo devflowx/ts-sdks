@@ -1,5 +1,19 @@
 # @mysten/suins
 
+## 1.0.2
+
+### Patch Changes
+
+- 3d53583: Improve typing of generated bcs tuples
+
+## 1.0.1
+
+### Patch Changes
+
+- 99d1e00: Add default export condition
+- Updated dependencies [99d1e00]
+  - @mysten/sui@2.3.2
+
 ## 1.0.0
 
 ### Major Changes

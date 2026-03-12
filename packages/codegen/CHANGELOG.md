@@ -1,5 +1,38 @@
 # @mysten/codegen
 
+## 0.8.2
+
+### Patch Changes
+
+- 3d53583: Improve typing of generated bcs tuples
+
+## 0.8.1
+
+### Patch Changes
+
+- 99d1e00: Add default export condition
+- Updated dependencies [99d1e00]
+  - @mysten/bcs@2.0.2
+  - @mysten/sui@2.3.2
+
+## 0.8.0
+
+### Minor Changes
+
+- fcbf952: - Fix phantom type parameter index mismatch when generating BCS types for structs with
+  phantom types followed by non-phantom types
+  - Include phantom type parameters in generated MoveStruct names (e.g., `Pair<T, phantom U>`
+    instead of just `Pair<T>`)
+  - Add `includePhantomTypeParameters` config option to generate BCS types that include phantom type
+    parameters as function arguments
+  - Remove invalid `--yes` flag from `sui move summary` CLI calls
+
+### Patch Changes
+
+- Updated dependencies [724a13a]
+- Updated dependencies [fcbf952]
+  - @mysten/sui@2.3.0
+
 ## 0.7.0
 
 ### Minor Changes

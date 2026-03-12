@@ -1,5 +1,82 @@
 # @mysten/sui.js
 
+## 2.6.0
+
+### Minor Changes
+
+- 903eecc: Add `childId` to `getDynamicField` response for dynamic object fields.
+- e33fea3: Add `json` field to event data in transaction responses. When `events: true` is included,
+  each event now contains a `json` field with the JSON representation of the event's Move struct
+  data (or `null` if unavailable). Supported across all three transports (gRPC, GraphQL, JSON-RPC).
+- 903eecc: Add `include: { value: true }` option to `listDynamicFields` on `SuiGrpcClient` and
+  `SuiGraphQLClient` to optionally return the field values
+
+### Patch Changes
+
+- e33fea3: Fix gas payment resolution to check sender's address balance when sender is their own gas
+  payer. Previously, address balance was only checked for sponsored transactions, causing "No valid
+  gas coins found" errors for accounts with sufficient address balance but no coin objects.
+- 903eecc: Fix IDE autocomplete for `include` option in client and client.core methods
+- 903eecc: Update GraphQL schema and remove references to dropped `SimulationResult.error` and
+  `ExecutionResult.errors` fields
+
+## 2.5.1
+
+### Patch Changes
+
+- e8f985e: Fix duplicate `storageCost` in `ParallelTransactionExecutor` gas calculation, which was
+  double-counting storage costs.
+
+## 2.5.0
+
+### Minor Changes
+
+- 1c97aa2: Add childId for listDyanamicFields response and fix name encoding for dynamic field
+  objects
+
+### Patch Changes
+
+- 9ab9a50: Fix `parseTypeTag` to correctly handle vector type parameters containing struct types
+  (e.g. `vector<0x2::sui::SUI>`). Previously, the `::` inside the vector's type parameter caused the
+  entire vector to be incorrectly parsed as a struct tag. Also reject malformed vector inputs like
+  `vector<>` (empty type parameter) and `vector<u8` (missing closing bracket).
+
+## 2.4.0
+
+### Minor Changes
+
+- 5270eaf: Add `isValidStructTag` validation utility. `isValidNamedType` now also validates the full
+  struct tag structure (completing the TODO that previously returned `true` unconditionally).
+
+## 2.3.2
+
+### Patch Changes
+
+- 99d1e00: Add default export condition
+- Updated dependencies [99d1e00]
+  - @mysten/utils@0.3.1
+  - @mysten/bcs@2.0.2
+
+## 2.3.1
+
+### Patch Changes
+
+- 265ec25: Add `isPreparedForSerialization` method to Transaction class for checking if a
+  transaction is ready for JSON serialization. Update `Transaction.from` to validate that
+  transactions are prepared before copying and automatically register the CoinWithBalance intent
+  resolver when needed.
+
+## 2.3.0
+
+### Minor Changes
+
+- 724a13a: Improve handling of clever errors during simulation
+
+### Patch Changes
+
+- fcbf952: Fix `$extend` chaining so that `client.$extend(sdk1()).$extend(sdk2())` works correctly.
+  Previously, the second `$extend` call would lose the extensions from the first call.
+
 ## 2.2.0
 
 ### Minor Changes

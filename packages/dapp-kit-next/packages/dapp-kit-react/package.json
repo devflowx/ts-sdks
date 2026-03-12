@@ -2,7 +2,7 @@
 	"name": "@mysten/dapp-kit-react",
 	"author": "Mysten Labs <build@mystenlabs.com>",
 	"description": "React bindings for @mysten/dapp-kit-core",
-	"version": "1.0.1",
+	"version": "2.0.0",
 	"license": "Apache-2.0",
 	"files": [
 		"LICENSE",
@@ -16,7 +16,13 @@
 	"exports": {
 		".": {
 			"types": "./dist/index.d.mts",
-			"import": "./dist/index.mjs"
+			"import": "./dist/index.mjs",
+			"default": "./dist/index.mjs"
+		},
+		"./ui": {
+			"types": "./dist/ui.d.mts",
+			"import": "./dist/ui.mjs",
+			"default": "./dist/ui.mjs"
 		}
 	},
 	"scripts": {

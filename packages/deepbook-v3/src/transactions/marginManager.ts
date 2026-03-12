@@ -5,6 +5,7 @@ import { coinWithBalance } from '@mysten/sui/transactions';
 
 import type { DeepBookConfig } from '../utils/config.js';
 import type { DepositParams, DepositDuringInitParams } from '../types/index.js';
+import { convertQuantity } from '../utils/conversion.js';
 
 /**
  * MarginManagerContract class for managing MarginManager operations.
@@ -102,7 +103,7 @@ export class MarginManagerContract {
 			'amount' in params && params.amount !== undefined
 				? coinWithBalance({
 						type: depositCoin.type,
-						balance: Math.round(params.amount * depositCoin.scalar),
+						balance: convertQuantity(params.amount, depositCoin.scalar),
 					})
 				: params.coin;
 
@@ -135,7 +136,7 @@ export class MarginManagerContract {
 			'amount' in params && params.amount !== undefined
 				? coinWithBalance({
 						type: baseCoin.type,
-						balance: Math.round(params.amount * baseCoin.scalar),
+						balance: convertQuantity(params.amount, baseCoin.scalar),
 					})
 				: params.coin;
 		tx.moveCall({
@@ -167,7 +168,7 @@ export class MarginManagerContract {
 			'amount' in params && params.amount !== undefined
 				? coinWithBalance({
 						type: quoteCoin.type,
-						balance: Math.round(params.amount * quoteCoin.scalar),
+						balance: convertQuantity(params.amount, quoteCoin.scalar),
 					})
 				: params.coin;
 		tx.moveCall({
@@ -200,7 +201,7 @@ export class MarginManagerContract {
 			'amount' in params && params.amount !== undefined
 				? coinWithBalance({
 						type: deepCoin.type,
-						balance: Math.round(params.amount * deepCoin.scalar),
+						balance: convertQuantity(params.amount, deepCoin.scalar),
 					})
 				: params.coin;
 		tx.moveCall({
@@ -240,7 +241,7 @@ export class MarginManagerContract {
 				tx.object(baseCoin.priceInfoObjectId!),
 				tx.object(quoteCoin.priceInfoObjectId!),
 				tx.object(pool.address),
-				tx.pure.u64(Math.round(amount * baseCoin.scalar)),
+				tx.pure.u64(convertQuantity(amount, baseCoin.scalar)),
 				tx.object.clock(),
 			],
 			typeArguments: [baseCoin.type, quoteCoin.type, baseCoin.type],
@@ -270,7 +271,7 @@ export class MarginManagerContract {
 				tx.object(baseCoin.priceInfoObjectId!),
 				tx.object(quoteCoin.priceInfoObjectId!),
 				tx.object(pool.address),
-				tx.pure.u64(Math.round(amount * quoteCoin.scalar)),
+				tx.pure.u64(convertQuantity(amount, quoteCoin.scalar)),
 				tx.object.clock(),
 			],
 			typeArguments: [baseCoin.type, quoteCoin.type, quoteCoin.type],
@@ -301,7 +302,7 @@ export class MarginManagerContract {
 				tx.object(baseCoin.priceInfoObjectId!),
 				tx.object(quoteCoin.priceInfoObjectId!),
 				tx.object(pool.address),
-				tx.pure.u64(Math.round(amount * deepCoin.scalar)),
+				tx.pure.u64(convertQuantity(amount, deepCoin.scalar)),
 				tx.object.clock(),
 			],
 			typeArguments: [baseCoin.type, quoteCoin.type, deepCoin.type],
@@ -329,7 +330,7 @@ export class MarginManagerContract {
 				tx.object(baseCoin.priceInfoObjectId!),
 				tx.object(quoteCoin.priceInfoObjectId!),
 				tx.object(pool.address),
-				tx.pure.u64(Math.round(amount * baseCoin.scalar)),
+				tx.pure.u64(convertQuantity(amount, baseCoin.scalar)),
 				tx.object.clock(),
 			],
 			typeArguments: [baseCoin.type, quoteCoin.type],
@@ -357,7 +358,7 @@ export class MarginManagerContract {
 				tx.object(baseCoin.priceInfoObjectId!),
 				tx.object(quoteCoin.priceInfoObjectId!),
 				tx.object(pool.address),
-				tx.pure.u64(Math.round(amount * quoteCoin.scalar)),
+				tx.pure.u64(convertQuantity(amount, quoteCoin.scalar)),
 				tx.object.clock(),
 			],
 			typeArguments: [baseCoin.type, quoteCoin.type],
@@ -384,7 +385,7 @@ export class MarginManagerContract {
 				tx.object(baseMarginPool.address),
 				tx.object.option({
 					type: 'u64',
-					value: amount ? tx.pure.u64(Math.round(amount * baseCoin.scalar)) : null,
+					value: amount ? tx.pure.u64(convertQuantity(amount, baseCoin.scalar)) : null,
 				}),
 				tx.object.clock(),
 			],
@@ -412,7 +413,7 @@ export class MarginManagerContract {
 				tx.object(quoteMarginPool.address),
 				tx.object.option({
 					type: 'u64',
-					value: amount ? tx.pure.u64(Math.round(amount * quoteCoin.scalar)) : null,
+					value: amount ? tx.pure.u64(convertQuantity(amount, quoteCoin.scalar)) : null,
 				}),
 				tx.object.clock(),
 			],
@@ -753,32 +754,4 @@ export class MarginManagerContract {
 			typeArguments: [baseCoin.type, quoteCoin.type],
 		});
 	};
-
-	/**
-	 * @description Get account order details for a margin manager.
-	 * This retrieves the balance manager from the margin manager and calls get_account_order_details.
-	 * @param {string} poolKey The key to identify the pool
-	 * @param {string} marginManagerId The ID of the margin manager
-	 * @returns A function that takes a Transaction object
-	 */
-	getMarginAccountOrderDetails =
-		(poolKey: string, marginManagerId: string) => (tx: Transaction) => {
-			const pool = this.#config.getPool(poolKey);
-			const baseCoin = this.#config.getCoin(pool.baseCoin);
-			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-
-			// Get the balance manager from the margin manager
-			const balanceManager = tx.moveCall({
-				target: `${this.#config.MARGIN_PACKAGE_ID}::margin_manager::balance_manager`,
-				arguments: [tx.object(marginManagerId)],
-				typeArguments: [baseCoin.type, quoteCoin.type],
-			});
-
-			// Call get_account_order_details with the balance manager
-			return tx.moveCall({
-				target: `${this.#config.DEEPBOOK_PACKAGE_ID}::pool::get_account_order_details`,
-				arguments: [tx.object(pool.address), balanceManager],
-				typeArguments: [baseCoin.type, quoteCoin.type],
-			});
-		};
 }

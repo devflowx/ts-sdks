@@ -58,9 +58,32 @@ export namespace SuiClientTypes {
 	}
 
 	export interface ObjectInclude {
+		/**
+		 * Include the BCS-encoded Move struct content of the object.
+		 *
+		 * Returns the raw bytes of the object's Move struct fields — pass directly to
+		 * generated BCS types (e.g., `MyStruct.parse(object.content)`).
+		 */
 		content?: boolean;
+		/**
+		 * Include the digest of the transaction that last mutated this object.
+		 */
 		previousTransaction?: boolean;
+		/**
+		 * Include the full BCS-encoded object envelope. Rarely needed — most metadata
+		 * (owner, version, type) is already available as fields on the object response.
+		 *
+		 * Parse with `bcs.Object.parse(object.objectBcs)` from `@mysten/sui/bcs`.
+		 * Do not pass to a Move struct parser — use `content` for that instead.
+		 */
 		objectBcs?: boolean;
+		/**
+		 * Include the JSON representation of the object's Move struct content.
+		 *
+		 * **Warning:** The exact shape and field names of this data may vary between different
+		 * API implementations (JSON-RPC vs gRPC or GraphQL). For consistent data across APIs,
+		 * use the `content` field and parse the BCS data directly.
+		 */
 		json?: boolean;
 	}
 
@@ -68,14 +91,14 @@ export namespace SuiClientTypes {
 		Include extends ObjectInclude = {},
 	> extends CoreClientMethodOptions {
 		objectIds: string[];
-		include?: Include;
+		include?: Include & ObjectInclude;
 	}
 
 	export interface GetObjectOptions<
 		Include extends ObjectInclude = {},
 	> extends CoreClientMethodOptions {
 		objectId: string;
-		include?: Include;
+		include?: Include & ObjectInclude;
 	}
 
 	export interface ListOwnedObjectsOptions<
@@ -85,7 +108,7 @@ export namespace SuiClientTypes {
 		limit?: number;
 		cursor?: string | null;
 		type?: string;
-		include?: Include;
+		include?: Include & ObjectInclude;
 	}
 
 	export interface ListCoinsOptions extends CoreClientMethodOptions {
@@ -133,8 +156,10 @@ export namespace SuiClientTypes {
 		digest: string;
 		owner: ObjectOwner;
 		type: string;
+		/** BCS-encoded Move struct content — pass to generated BCS type parsers. */
 		content: Include extends { content: true } ? Uint8Array<ArrayBuffer> : undefined;
 		previousTransaction: Include extends { previousTransaction: true } ? string | null : undefined;
+		/** Full BCS-encoded object envelope — parse with `bcs.Object` not a struct parser. */
 		objectBcs: Include extends { objectBcs: true } ? Uint8Array<ArrayBuffer> : undefined;
 		/**
 		 * The JSON representation of the object's Move struct content.
@@ -155,27 +180,28 @@ export namespace SuiClientTypes {
 		balance: string;
 	}
 
+	export type DynamicFieldEntry = {
+		fieldId: string;
+		type: string;
+		name: DynamicFieldName;
+		valueType: string;
+	} & ({ $kind: 'DynamicField'; childId?: never } | { $kind: 'DynamicObject'; childId: string });
+
+	export type DynamicField = DynamicFieldEntry & {
+		value: DynamicFieldValue;
+		version: string;
+		digest: string;
+		previousTransaction: string | null;
+	};
+
 	export interface ListDynamicFieldsResponse {
 		hasNextPage: boolean;
 		cursor: string | null;
-		dynamicFields: {
-			fieldId: string;
-			type: string;
-			name: DynamicFieldName;
-			valueType: string;
-		}[];
+		dynamicFields: DynamicFieldEntry[];
 	}
 
 	export interface GetDynamicFieldResponse {
-		dynamicField: {
-			name: DynamicFieldName;
-			value: DynamicFieldValue;
-			fieldId: string;
-			version: string;
-			digest: string;
-			type: string;
-			previousTransaction: string | null;
-		};
+		dynamicField: DynamicField;
 	}
 
 	export interface GetDynamicObjectFieldOptions<
@@ -183,7 +209,7 @@ export namespace SuiClientTypes {
 	> extends CoreClientMethodOptions {
 		parentId: string;
 		name: DynamicFieldName;
-		include?: Include;
+		include?: Include & ObjectInclude;
 	}
 
 	export interface GetDynamicObjectFieldResponse<out Include extends ObjectInclude = {}> {
@@ -311,15 +337,22 @@ export namespace SuiClientTypes {
 		  };
 
 	export interface TransactionInclude {
+		/** Include balance changes caused by the transaction. */
 		balanceChanges?: boolean;
+		/** Include parsed transaction effects (gas used, changed objects, status, etc.). */
 		effects?: boolean;
+		/** Include events emitted by the transaction. */
 		events?: boolean;
+		/** Include a map of object IDs to their types for all changed objects. */
 		objectTypes?: boolean;
+		/** Include the parsed transaction data (sender, gas config, inputs, commands). */
 		transaction?: boolean;
+		/** Include the raw BCS-encoded transaction bytes. */
 		bcs?: boolean;
 	}
 
 	export interface SimulateTransactionInclude extends TransactionInclude {
+		/** Include return values and mutated references from each command (simulation only). */
 		commandResults?: boolean;
 	}
 
@@ -344,7 +377,7 @@ export namespace SuiClientTypes {
 		Include extends TransactionInclude = {},
 	> extends CoreClientMethodOptions {
 		digest: string;
-		include?: Include;
+		include?: Include & TransactionInclude;
 	}
 
 	export type WaitForTransactionOptions<Include extends TransactionInclude = {}> =
@@ -362,7 +395,7 @@ export namespace SuiClientTypes {
 		Include extends TransactionInclude = {},
 	> extends CoreClientMethodOptions {
 		result: TransactionResult<any>;
-		include?: Include;
+		include?: Include & TransactionInclude;
 		timeout?: number;
 		digest?: never;
 	}
@@ -372,7 +405,7 @@ export namespace SuiClientTypes {
 	> extends CoreClientMethodOptions {
 		transaction: Uint8Array;
 		signatures: string[];
-		include?: Include;
+		include?: Include & TransactionInclude;
 	}
 
 	export interface SignAndExecuteTransactionOptions<
@@ -381,14 +414,14 @@ export namespace SuiClientTypes {
 		transaction: Uint8Array | TransactionInstance;
 		signer: Signer;
 		additionalSignatures?: string[];
-		include?: Include;
+		include?: Include & TransactionInclude;
 	}
 
 	export interface SimulateTransactionOptions<
 		Include extends SimulateTransactionInclude = {},
 	> extends CoreClientMethodOptions {
 		transaction: Uint8Array | TransactionInstance;
-		include?: Include;
+		include?: Include & SimulateTransactionInclude;
 	}
 
 	export interface GetReferenceGasPriceOptions extends CoreClientMethodOptions {}
@@ -814,6 +847,14 @@ export namespace SuiClientTypes {
 		sender: string;
 		eventType: string;
 		bcs: Uint8Array;
+		/**
+		 * The JSON representation of the event's Move struct data.
+		 *
+		 * **Warning:** The exact shape and field names of this data may vary between different
+		 * API implementations (JSON-RPC vs gRPC or GraphQL). For consistent data across APIs use
+		 * the `bcs` field and parse the BCS data directly.
+		 */
+		json: Record<string, unknown> | null;
 	}
 
 	export interface MoveAbort {

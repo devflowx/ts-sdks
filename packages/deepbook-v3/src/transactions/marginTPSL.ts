@@ -10,6 +10,7 @@ import type {
 } from '../types/index.js';
 import { OrderType, SelfMatchingOptions } from '../types/index.js';
 import { MAX_TIMESTAMP, FLOAT_SCALAR } from '../utils/config.js';
+import { convertQuantity, convertPrice } from '../utils/conversion.js';
 
 /**
  * MarginTPSLContract class for managing Take Profit / Stop Loss operations.
@@ -34,12 +35,16 @@ export class MarginTPSLContract {
 	 * @returns A function that takes a Transaction object
 	 */
 	newCondition =
-		(poolKey: string, triggerBelowPrice: boolean, triggerPrice: number) => (tx: Transaction) => {
+		(poolKey: string, triggerBelowPrice: boolean, triggerPrice: number | bigint) =>
+		(tx: Transaction) => {
 			const pool = this.#config.getPool(poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
 			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const inputPrice = Math.round(
-				(triggerPrice * FLOAT_SCALAR * quoteCoin.scalar) / baseCoin.scalar,
+			const inputPrice = convertPrice(
+				triggerPrice,
+				FLOAT_SCALAR,
+				quoteCoin.scalar,
+				baseCoin.scalar,
 			);
 			return tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::tpsl::new_condition`,
@@ -68,8 +73,8 @@ export class MarginTPSLContract {
 			const pool = this.#config.getPool(poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
 			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const inputPrice = Math.round((price * FLOAT_SCALAR * quoteCoin.scalar) / baseCoin.scalar);
-			const inputQuantity = Math.round(quantity * baseCoin.scalar);
+			const inputPrice = convertPrice(price, FLOAT_SCALAR, quoteCoin.scalar, baseCoin.scalar);
+			const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 			return tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::tpsl::new_pending_limit_order`,
 				arguments: [
@@ -102,7 +107,7 @@ export class MarginTPSLContract {
 			} = params;
 			const pool = this.#config.getPool(poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
-			const inputQuantity = Math.round(quantity * baseCoin.scalar);
+			const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 			return tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::tpsl::new_pending_market_order`,
 				arguments: [
@@ -195,20 +200,20 @@ export class MarginTPSLContract {
 	/**
 	 * @description Execute conditional orders that have been triggered
 	 * This is a permissionless function that can be called by anyone
-	 * @param {string} marginManagerKey The key to identify the margin manager
+	 * @param {string} managerAddress The address of the margin manager
+	 * @param {string} poolKey The key to identify the pool (e.g., 'SUI_USDC')
 	 * @param {number} maxOrdersToExecute Maximum number of orders to execute in this call
 	 * @returns A function that takes a Transaction object
 	 */
 	executeConditionalOrders =
-		(marginManagerKey: string, maxOrdersToExecute: number) => (tx: Transaction) => {
-			const manager = this.#config.getMarginManager(marginManagerKey);
-			const pool = this.#config.getPool(manager.poolKey);
+		(managerAddress: string, poolKey: string, maxOrdersToExecute: number) => (tx: Transaction) => {
+			const pool = this.#config.getPool(poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
 			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
 			return tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::margin_manager::execute_conditional_orders`,
 				arguments: [
-					tx.object(manager.address),
+					tx.object(managerAddress),
 					tx.object(pool.address),
 					tx.object(baseCoin.priceInfoObjectId!),
 					tx.object(quoteCoin.priceInfoObjectId!),

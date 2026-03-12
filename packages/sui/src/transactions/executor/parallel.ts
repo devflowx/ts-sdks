@@ -128,7 +128,7 @@ export class ParallelTransactionExecutor {
 
 	async executeTransaction<Include extends SuiClientTypes.TransactionInclude = {}>(
 		transaction: Transaction,
-		include?: Include,
+		include?: Include & SuiClientTypes.TransactionInclude,
 		additionalSignatures: string[] = [],
 	): Promise<SuiClientTypes.TransactionResult<Include & { effects: true }>> {
 		const { promise, resolve, reject } =
@@ -262,7 +262,6 @@ export class ParallelTransactionExecutor {
 				if (gasOwner === this.#signer.toSuiAddress()) {
 					const totalUsed =
 						BigInt(gasUsed.computationCost) +
-						BigInt(gasUsed.storageCost) +
 						BigInt(gasUsed.storageCost) -
 						BigInt(gasUsed.storageRebate);
 					const remainingBalance = coin.balance - totalUsed;

@@ -7,12 +7,12 @@ export type CoinMap = Record<string, Coin>;
 export type PoolMap = Record<string, Pool>;
 export type MarginPoolMap = Record<string, MarginPool>;
 export interface DeepbookPackageIds {
-	DEEPBOOK_PACKAGE_ID: string;
-	REGISTRY_ID: string;
-	DEEP_TREASURY_ID: string;
-	MARGIN_PACKAGE_ID: string;
-	MARGIN_REGISTRY_ID: string;
-	LIQUIDATION_PACKAGE_ID: string;
+	DEEPBOOK_PACKAGE_ID?: string;
+	REGISTRY_ID?: string;
+	DEEP_TREASURY_ID?: string;
+	MARGIN_PACKAGE_ID?: string;
+	MARGIN_REGISTRY_ID?: string;
+	LIQUIDATION_PACKAGE_ID?: string;
 }
 
 export const testnetPackageIds = {
@@ -28,9 +28,9 @@ export const mainnetPackageIds = {
 	DEEPBOOK_PACKAGE_ID: '0x337f4f4f6567fcd778d5454f27c16c70e2f274cc6377ea6249ddf491482ef497',
 	REGISTRY_ID: '0xaf16199a2dff736e9f07a845f23c5da6df6f756eddb631aed9d24a93efc4549d',
 	DEEP_TREASURY_ID: '0x032abf8948dda67a271bcc18e776dbbcfb0d58c8d288a700ff0d5521e57a1ffe',
-	MARGIN_PACKAGE_ID: '0x97d9473771b01f77b0940c589484184b49f6444627ec121314fae6a6d36fb86b',
+	MARGIN_PACKAGE_ID: '0xfbd322126f1452fd4c89aedbaeb9fd0c44df9b5cedbe70d76bf80dc086031377',
 	MARGIN_REGISTRY_ID: '0x0e40998b359a9ccbab22a98ed21bd4346abf19158bc7980c8291908086b3a742',
-	LIQUIDATION_PACKAGE_ID: '0x73c593882cdb557703e903603f20bd373261fe6ba6e1a40515f4b62f10553e6a',
+	LIQUIDATION_PACKAGE_ID: '0x55718c06706bee34c9f3c39f662f10be354a4dcc719699ad72091dc343b641b8',
 } satisfies DeepbookPackageIds;
 
 export const testnetCoins: CoinMap = {
@@ -111,6 +111,22 @@ export const mainnetCoins: CoinMap = {
 		currencyId: '0xb6a0c0bacb1c87c3be4dff20c22ef1012125b5724b5b0ff424f852a2651b23fa',
 		priceInfoObjectId: '0xeb7e669f74d976c0b99b6ef9801e3a77716a95f1a15754e0f1399ce3fb60973d',
 	},
+	SUIUSDE: {
+		address: `0x41d587e5336f1c86cad50d38a7136db99333bb9bda91cea4ba69115defeb1402`,
+		type: `0x41d587e5336f1c86cad50d38a7136db99333bb9bda91cea4ba69115defeb1402::sui_usde::SUI_USDE`,
+		scalar: 1000000,
+		feed: '0x8cead549d0e770dea8fdf5e018a85d59585265cf8bff16ba83962fc7996dbb7f',
+		currencyId: '0x44f0959110bd9e5e91af0483364c42075ac19f173b28f708989f419ef3560576',
+		priceInfoObjectId: '0x9b2028bfc829127d2e5ead1691dc3002de9e9b8d8076b4915e5ecc7d9b99d63f',
+	},
+	XBTC: {
+		address: `0x876a4b7bce8aeaef60464c11f4026903e9afacab79b9b142686158aa86560b50`,
+		type: `0x876a4b7bce8aeaef60464c11f4026903e9afacab79b9b142686158aa86560b50::xbtc::XBTC`,
+		scalar: 100000000,
+		feed: '0xae8f269ed9c4bed616c99a98cf6dfe562bd3202e7f91821a471ff854713851b4',
+		currencyId: '0x907bb173bffab7c57bbd3350a633aa32c8770937b496d7d88874087b59200bcc',
+		priceInfoObjectId: '0xa4b9db1866ee6e2a156e8c36fc66be0f68f232388ebb578c949c2c6beb50128b',
+	},
 	WUSDC: {
 		address: `0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf`,
 		type: `0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN`,
@@ -161,11 +177,6 @@ export const mainnetCoins: CoinMap = {
 		type: `0xb45fcfcc2cc07ce0702cc2d229621e046c906ef14d9b25e8e4d25f6e8763fef7::send::SEND`,
 		scalar: 1000000,
 	},
-	XBTC: {
-		address: `0x876a4b7bce8aeaef60464c11f4026903e9afacab79b9b142686158aa86560b50`,
-		type: `0x876a4b7bce8aeaef60464c11f4026903e9afacab79b9b142686158aa86560b50::xbtc::XBTC`,
-		scalar: 100000000,
-	},
 	IKA: {
 		address: `0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa`,
 		type: `0x7262fb2f7a3a14c888c438a3cd9b912469a58cf60f367352c46584262e8299aa::ika::IKA`,
@@ -186,16 +197,10 @@ export const mainnetCoins: CoinMap = {
 		type: `0x375f70cf2ae4c00bf37117d0c85a2c71545e6ee05c4a5c7d282cd66a4504b068::usdt::USDT`,
 		scalar: 1000000,
 	},
-	USDE: {
-		address: `0x41d587e5336f1c86cad50d38a7136db99333bb9bda91cea4ba69115defeb1402`,
-		type: `0x41d587e5336f1c86cad50d38a7136db99333bb9bda91cea4ba69115defeb1402::sui_usde::SUI_USDE`,
+	USDSUI: {
+		address: `0x44f838219cf67b058f3b37907b655f226153c18e33dfcd0da559a844fea9b1c1`,
+		type: `0x44f838219cf67b058f3b37907b655f226153c18e33dfcd0da559a844fea9b1c1::usdsui::USDSUI`,
 		scalar: 1000000,
-	},
-	// This coin is experimental
-	WGIGA: {
-		address: `0xec32640add6d02a1d5f0425d72705eb76d9de7edfd4f34e0dba68e62ecceb05b`,
-		type: `0xec32640add6d02a1d5f0425d72705eb76d9de7edfd4f34e0dba68e62ecceb05b::coin::COIN`,
-		scalar: 100000,
 	},
 };
 
@@ -338,15 +343,25 @@ export const mainnetPools: PoolMap = {
 		baseCoin: 'USDT',
 		quoteCoin: 'USDC',
 	},
-	USDE_USDC: {
+	SUIUSDE_USDC: {
 		address: '0x0fac1cebf35bde899cd9ecdd4371e0e33f44ba83b8a2902d69186646afa3a94b',
-		baseCoin: 'USDE',
+		baseCoin: 'SUIUSDE',
 		quoteCoin: 'USDC',
 	},
-	SUI_USDE: {
+	SUI_SUIUSDE: {
 		address: '0x034f3a42e7348de2084406db7a725f9d9d132a56c68324713e6e623601fb4fd7',
 		baseCoin: 'SUI',
-		quoteCoin: 'USDE',
+		quoteCoin: 'SUIUSDE',
+	},
+	SUI_USDSUI: {
+		address: '0x826eeacb2799726334aa580396338891205a41cf9344655e526aae6ddd5dc03f',
+		baseCoin: 'SUI',
+		quoteCoin: 'USDSUI',
+	},
+	USDSUI_USDC: {
+		address: '0xa374264d43e6baa5aa8b35ff18ff24fdba7443b4bcb884cb4c2f568d32cdac36',
+		baseCoin: 'USDSUI',
+		quoteCoin: 'USDC',
 	},
 };
 
@@ -385,6 +400,14 @@ export const mainnetMarginPools = {
 	WAL: {
 		address: '0x38decd3dbb62bd4723144349bf57bc403b393aee86a51596846a824a1e0c2c01',
 		type: '0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL',
+	},
+	SUIUSDE: {
+		address: '0xbb990ca04a7743e6c0a25a7fb16f60fc6f6d8bf213624ff03a63f1bb04c3a12f',
+		type: '0x41d587e5336f1c86cad50d38a7136db99333bb9bda91cea4ba69115defeb1402::sui_usde::SUI_USDE',
+	},
+	XBTC: {
+		address: '0x14dfbf54400e0b97e892349310d392bef6d187c2b6709d9b246b8f41c9a13de4',
+		type: '0x876a4b7bce8aeaef60464c11f4026903e9afacab79b9b142686158aa86560b50::xbtc::XBTC',
 	},
 };
 

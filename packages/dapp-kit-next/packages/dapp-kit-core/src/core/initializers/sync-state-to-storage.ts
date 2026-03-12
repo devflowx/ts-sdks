@@ -28,9 +28,14 @@ export function syncStateToStorage({
 					storageKey,
 					getSavedAccountStorageKey(connection.account, connection.supportedIntents),
 				);
-			} else {
-				storage.removeItem(storageKey);
 			}
+			// Storage is cleared by the disconnectWallet action on explicit user
+			// disconnect so autoconnect won't reconnect after a page refresh.
+			// Wallet *removal* (HMR, React strict mode, effect re-runs) does NOT
+			// clear storage — those cases are handled by the $baseConnection /
+			// $connection computed split: $baseConnection stays 'connected' while
+			// the wallet is temporarily unregistered, and $connection recomputes
+			// to 'connected' once the wallet re-appears.
 		});
 	});
 }

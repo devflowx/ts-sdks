@@ -1,5 +1,112 @@
 # @mysten/deepbook-v3
 
+## 1.1.5
+
+### Patch Changes
+
+- cc33343: Add USDSUI pools
+- Updated dependencies [e8f985e]
+  - @mysten/sui@2.5.1
+
+## 1.1.4
+
+### Patch Changes
+
+- c95bbc9: Add USDSUI coin to mainnet constants
+
+## 1.1.3
+
+### Patch Changes
+
+- 7a2ac9a: XBTC margin pool
+
+## 1.1.2
+
+### Patch Changes
+
+- 770536f: XBTC price feeds added
+
+## 1.1.1
+
+### Patch Changes
+
+- 380d5b1: Fix getMarginManagerBalanceManagerId
+
+## 1.1.0
+
+### Minor Changes
+
+- 0be1a79: Add support for custom networks (localnet, devnet) via optional `packageIds` parameter
+
+### Patch Changes
+
+- 9382cd7: Validations for custom package configs
+- Updated dependencies [9ab9a50]
+- Updated dependencies [1c97aa2]
+  - @mysten/sui@2.5.0
+
+## 1.0.12
+
+### Patch Changes
+
+- 6add1b1: New Liquidation Package ID (Internal usage)
+
+## 1.0.11
+
+### Patch Changes
+
+- d13c13e: Add SUIUSDE margin pool
+
+## 1.0.10
+
+### Patch Changes
+
+- 05765dc: checkManagerBalancesWithAddress and getMarginManagerBalances added to support querying
+  balnces in a single RPC call for multiple managers and assets
+
+## 1.0.9
+
+### Patch Changes
+
+- 5b220df: Update USDE to SUIUSDE in constants
+
+## 1.0.8
+
+### Patch Changes
+
+- 63ca077: Margin ID Update
+- 3d53583: Improve typing of generated bcs tuples
+- 1232202: New method checkManagerBalanceWithAddress. Pyth config for USDE.
+
+## 1.0.7
+
+### Patch Changes
+
+- 99d1e00: Add default export condition
+- Updated dependencies [99d1e00]
+  - @mysten/bcs@2.0.2
+  - @mysten/sui@2.3.2
+
+## 1.0.6
+
+### Patch Changes
+
+- ad9a3a4: Price added function
+
+## 1.0.5
+
+### Patch Changes
+
+- 65550fe: Update executeConditionalOrders for composability
+
+## 1.0.4
+
+### Patch Changes
+
+- b1bf6fd: Batch pyth price feed updates, stale feeds older than 30 seconds
+- Updated dependencies [265ec25]
+  - @mysten/sui@2.3.1
+
 ## 1.0.3
 
 ### Patch Changes

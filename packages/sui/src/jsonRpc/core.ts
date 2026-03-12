@@ -22,6 +22,7 @@ import { coreClientResolveTransactionPlugin } from '../client/core-resolver.js';
 import { TransactionDataBuilder } from '../transactions/TransactionData.js';
 import { chunk } from '@mysten/utils';
 import { normalizeSuiAddress, normalizeStructTag } from '../utils/sui-types.js';
+import { deriveDynamicFieldID } from '../utils/dynamic-fields.js';
 import { SUI_FRAMEWORK_ADDRESS, SUI_SYSTEM_ADDRESS } from '../utils/constants.js';
 import { CoreClient } from '../client/core.js';
 import type { SuiClientTypes } from '../client/types.js';
@@ -114,7 +115,7 @@ export class JSONRpcCoreClient extends CoreClient {
 		this.#jsonRpcClient = jsonRpcClient;
 	}
 
-	async getObjects<Include extends SuiClientTypes.ObjectInclude = object>(
+	async getObjects<Include extends SuiClientTypes.ObjectInclude = {}>(
 		options: SuiClientTypes.GetObjectsOptions<Include>,
 	) {
 		const batches = chunk(options.objectIds, 50);
@@ -147,7 +148,7 @@ export class JSONRpcCoreClient extends CoreClient {
 			objects: results,
 		};
 	}
-	async listOwnedObjects<Include extends SuiClientTypes.ObjectInclude = object>(
+	async listOwnedObjects<Include extends SuiClientTypes.ObjectInclude = {}>(
 		options: SuiClientTypes.ListOwnedObjectsOptions<Include>,
 	) {
 		let filter: SuiObjectDataFilter | null = null;
@@ -286,7 +287,7 @@ export class JSONRpcCoreClient extends CoreClient {
 			cursor: null,
 		};
 	}
-	async getTransaction<Include extends SuiClientTypes.TransactionInclude = object>(
+	async getTransaction<Include extends SuiClientTypes.TransactionInclude = {}>(
 		options: SuiClientTypes.GetTransactionOptions<Include>,
 	): Promise<SuiClientTypes.TransactionResult<Include>> {
 		const transaction = await this.#jsonRpcClient.getTransactionBlock({
@@ -306,7 +307,7 @@ export class JSONRpcCoreClient extends CoreClient {
 
 		return parseTransaction(transaction, options.include);
 	}
-	async executeTransaction<Include extends SuiClientTypes.TransactionInclude = object>(
+	async executeTransaction<Include extends SuiClientTypes.TransactionInclude = {}>(
 		options: SuiClientTypes.ExecuteTransactionOptions<Include>,
 	): Promise<SuiClientTypes.TransactionResult<Include>> {
 		const transaction = await this.#jsonRpcClient.executeTransactionBlock({
@@ -327,7 +328,7 @@ export class JSONRpcCoreClient extends CoreClient {
 
 		return parseTransaction(transaction, options.include);
 	}
-	async simulateTransaction<Include extends SuiClientTypes.SimulateTransactionInclude = object>(
+	async simulateTransaction<Include extends SuiClientTypes.SimulateTransactionInclude = {}>(
 		options: SuiClientTypes.SimulateTransactionOptions<Include>,
 	): Promise<SuiClientTypes.SimulateTransactionResult<Include>> {
 		if (!(options.transaction instanceof Uint8Array)) {
@@ -402,6 +403,7 @@ export class JSONRpcCoreClient extends CoreClient {
 						sender: event.sender,
 						eventType: event.type,
 						bcs: 'bcs' in event ? fromBase64(event.bcs) : new Uint8Array(),
+						json: (event.parsedJson as Record<string, unknown>) ?? null,
 					})) ?? [])
 				: undefined) as SuiClientTypes.Transaction<Include>['events'],
 		};
@@ -503,21 +505,27 @@ export class JSONRpcCoreClient extends CoreClient {
 		});
 
 		return {
-			dynamicFields: dynamicFields.data.map((dynamicField) => {
+			dynamicFields: dynamicFields.data.map((dynamicField): SuiClientTypes.DynamicFieldEntry => {
 				const isDynamicObject = dynamicField.type === 'DynamicObject';
 				const fullType = isDynamicObject
 					? `0x2::dynamic_field::Field<0x2::dynamic_object_field::Wrapper<${dynamicField.name.type}>, 0x2::object::ID>`
 					: `0x2::dynamic_field::Field<${dynamicField.name.type}, ${dynamicField.objectType}>`;
 
+				const bcsBytes = fromBase64(dynamicField.bcsName);
+				const derivedNameType = isDynamicObject
+					? `0x2::dynamic_object_field::Wrapper<${dynamicField.name.type}>`
+					: dynamicField.name.type;
 				return {
-					fieldId: dynamicField.objectId,
+					$kind: isDynamicObject ? 'DynamicObject' : 'DynamicField',
+					fieldId: deriveDynamicFieldID(options.parentId, derivedNameType, bcsBytes),
 					type: normalizeStructTag(fullType),
 					name: {
 						type: dynamicField.name.type,
-						bcs: fromBase64(dynamicField.bcsName),
+						bcs: bcsBytes,
 					},
 					valueType: dynamicField.objectType,
-				};
+					childId: isDynamicObject ? dynamicField.objectId : undefined,
+				} as SuiClientTypes.DynamicFieldEntry;
 			}),
 			hasNextPage: dynamicFields.hasNextPage,
 			cursor: dynamicFields.nextCursor,
@@ -657,7 +665,7 @@ function serializeObjectToBcs(object: SuiObjectData): Uint8Array | undefined {
 	}
 }
 
-function parseObject<Include extends SuiClientTypes.ObjectInclude = object>(
+function parseObject<Include extends SuiClientTypes.ObjectInclude = {}>(
 	object: SuiObjectData,
 	include?: Include,
 ): SuiClientTypes.Object<Include> {
@@ -795,7 +803,7 @@ function parseOwnerAddress(owner: ObjectOwner): string | null {
 	throw new Error(`Unknown owner type: ${JSON.stringify(owner)}`);
 }
 
-function parseTransaction<Include extends SuiClientTypes.TransactionInclude = object>(
+function parseTransaction<Include extends SuiClientTypes.TransactionInclude = {}>(
 	transaction: SuiTransactionBlockResponse,
 	include?: Include,
 ): SuiClientTypes.TransactionResult<Include> {
@@ -879,6 +887,7 @@ function parseTransaction<Include extends SuiClientTypes.TransactionInclude = ob
 					sender: event.sender,
 					eventType: event.type,
 					bcs: 'bcs' in event ? fromBase64(event.bcs) : new Uint8Array(),
+					json: (event.parsedJson as Record<string, unknown>) ?? null,
 				})) ?? [])
 			: undefined) as SuiClientTypes.Transaction<Include>['events'],
 	};

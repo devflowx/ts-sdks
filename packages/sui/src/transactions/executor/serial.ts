@@ -79,6 +79,10 @@ export class SerialTransactionExecutor {
 	}
 
 	#buildTransaction = async (transaction: Transaction) => {
+		await transaction.prepareForSerialization({
+			client: this.#client,
+			supportedIntents: ['CoinWithBalance'],
+		});
 		const copy = Transaction.from(transaction);
 
 		if (this.#gasMode === 'addressBalance') {
@@ -160,7 +164,7 @@ export class SerialTransactionExecutor {
 
 	executeTransaction<Include extends SuiClientTypes.TransactionInclude = {}>(
 		transaction: Transaction | Uint8Array,
-		include?: Include,
+		include?: Include & SuiClientTypes.TransactionInclude,
 		additionalSignatures: string[] = [],
 	): Promise<SuiClientTypes.TransactionResult<Include & { effects: true }>> {
 		return this.#queue.runTask(async () => {

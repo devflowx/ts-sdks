@@ -19,8 +19,18 @@ import { deepbook, OrderType, SelfMatchingOptions } from '../src/index.js';
 
 const SUI = process.env.SUI_BINARY ?? `sui`;
 
+type Network = 'mainnet' | 'testnet';
+
 export const getActiveAddress = () => {
 	return execSync(`${SUI} client active-address`, { encoding: 'utf8' }).trim();
+};
+
+const getActiveNetwork = (): Network => {
+	const env = execSync(`${SUI} client active-env`, { encoding: 'utf8' }).trim();
+	if (env !== 'mainnet' && env !== 'testnet') {
+		throw new Error(`Unsupported network: ${env}. Only 'mainnet' and 'testnet' are supported.`);
+	}
+	return env;
 };
 
 const GRPC_URLS = {
@@ -32,7 +42,7 @@ const GRPC_URLS = {
 	// ============================================================================
 	// CONFIGURATION
 	// ============================================================================
-	const network = 'testnet';
+	const network = getActiveNetwork();
 
 	// Configure margin managers - update these with your actual margin manager addresses
 	const marginManagers = {
@@ -211,8 +221,9 @@ const GRPC_URLS = {
 	// ----------------------------------------------------------------------------
 	console.log('Executing triggered conditional orders...');
 
-	// Execute up to 10 triggered orders
-	client.deepbook.marginTPSL.executeConditionalOrders('MARGIN_MANAGER_1', 10)(tx);
+	// Execute up to 10 triggered orders for a target margin manager (permissionless - any address)
+	const targetManagerAddress = marginManagers.MARGIN_MANAGER_1.address;
+	client.deepbook.marginTPSL.executeConditionalOrders(targetManagerAddress, 'SUI_USDC', 10)(tx);
 
 	// ============================================================================
 	// SECTION 3: USING HELPER FUNCTIONS DIRECTLY (Advanced Usage)

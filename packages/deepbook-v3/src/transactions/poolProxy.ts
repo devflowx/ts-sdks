@@ -10,6 +10,7 @@ import type {
 import type { DeepBookConfig } from '../utils/config.js';
 import { OrderType, SelfMatchingOptions } from '../types/index.js';
 import { MAX_TIMESTAMP, FLOAT_SCALAR } from '../utils/config.js';
+import { convertQuantity, convertPrice, convertRate } from '../utils/conversion.js';
 
 /**
  * PoolProxyContract class for managing PoolProxy operations.
@@ -46,8 +47,8 @@ export class PoolProxyContract {
 		const manager = this.#config.getMarginManager(marginManagerKey);
 		const baseCoin = this.#config.getCoin(pool.baseCoin);
 		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const inputPrice = Math.round((price * FLOAT_SCALAR * quoteCoin.scalar) / baseCoin.scalar);
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
+		const inputPrice = convertPrice(price, FLOAT_SCALAR, quoteCoin.scalar, baseCoin.scalar);
+		const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 		return tx.moveCall({
 			target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::place_limit_order`,
 			arguments: [
@@ -87,7 +88,7 @@ export class PoolProxyContract {
 		const manager = this.#config.getMarginManager(marginManagerKey);
 		const baseCoin = this.#config.getCoin(pool.baseCoin);
 		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
+		const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 		return tx.moveCall({
 			target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::place_market_order`,
 			arguments: [
@@ -127,8 +128,8 @@ export class PoolProxyContract {
 		const manager = this.#config.getMarginManager(marginManagerKey);
 		const baseCoin = this.#config.getCoin(pool.baseCoin);
 		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const inputPrice = Math.round((price * FLOAT_SCALAR * quoteCoin.scalar) / baseCoin.scalar);
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
+		const inputPrice = convertPrice(price, FLOAT_SCALAR, quoteCoin.scalar, baseCoin.scalar);
+		const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 		const marginPool = isBid
 			? this.#config.getMarginPool(pool.baseCoin)
 			: this.#config.getMarginPool(pool.quoteCoin);
@@ -173,7 +174,7 @@ export class PoolProxyContract {
 		const manager = this.#config.getMarginManager(marginManagerKey);
 		const baseCoin = this.#config.getCoin(pool.baseCoin);
 		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-		const inputQuantity = Math.round(quantity * baseCoin.scalar);
+		const inputQuantity = convertQuantity(quantity, baseCoin.scalar);
 		const marginPool = isBid
 			? this.#config.getMarginPool(pool.baseCoin)
 			: this.#config.getMarginPool(pool.quoteCoin);
@@ -209,7 +210,7 @@ export class PoolProxyContract {
 			const pool = this.#config.getPool(marginManager.poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
 			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const inputQuantity = Math.round(newQuantity * baseCoin.scalar);
+			const inputQuantity = convertQuantity(newQuantity, baseCoin.scalar);
 
 			tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::modify_order`,
@@ -328,7 +329,7 @@ export class PoolProxyContract {
 		const baseCoin = this.#config.getCoin(pool.baseCoin);
 		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
 		const deepCoin = this.#config.getCoin('DEEP');
-		const stakeInput = Math.round(stakeAmount * deepCoin.scalar);
+		const stakeInput = convertQuantity(stakeAmount, deepCoin.scalar);
 		tx.moveCall({
 			target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::stake`,
 			arguments: [
@@ -375,9 +376,9 @@ export class PoolProxyContract {
 			const pool = this.#config.getPool(marginManager.poolKey);
 			const baseCoin = this.#config.getCoin(pool.baseCoin);
 			const quoteCoin = this.#config.getCoin(pool.quoteCoin);
-			const stakeInput = Math.round(stakeRequired * FLOAT_SCALAR);
-			const takerFeeInput = Math.round(takerFee * FLOAT_SCALAR);
-			const makerFeeInput = Math.round(makerFee * FLOAT_SCALAR);
+			const stakeInput = convertRate(stakeRequired, FLOAT_SCALAR);
+			const takerFeeInput = convertRate(takerFee, FLOAT_SCALAR);
+			const makerFeeInput = convertRate(makerFee, FLOAT_SCALAR);
 			tx.moveCall({
 				target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::submit_proposal`,
 				arguments: [
@@ -457,4 +458,32 @@ export class PoolProxyContract {
 				typeArguments: [baseCoin.type, quoteCoin.type],
 			});
 		};
+
+	/**
+	 * @description Update the current price for a pool using Pyth oracle
+	 * @param {string} poolKey The key to identify the pool
+	 * @returns A function that takes a Transaction object
+	 */
+	updateCurrentPrice = (poolKey: string) => (tx: Transaction) => {
+		const pool = this.#config.getPool(poolKey);
+		const baseCoin = this.#config.getCoin(pool.baseCoin);
+		const quoteCoin = this.#config.getCoin(pool.quoteCoin);
+		if (!baseCoin.priceInfoObjectId) {
+			throw new Error(`Missing priceInfoObjectId for ${pool.baseCoin}`);
+		}
+		if (!quoteCoin.priceInfoObjectId) {
+			throw new Error(`Missing priceInfoObjectId for ${pool.quoteCoin}`);
+		}
+		tx.moveCall({
+			target: `${this.#config.MARGIN_PACKAGE_ID}::pool_proxy::update_current_price`,
+			arguments: [
+				tx.object(this.#config.MARGIN_REGISTRY_ID),
+				tx.object(pool.address),
+				tx.object(baseCoin.priceInfoObjectId),
+				tx.object(quoteCoin.priceInfoObjectId),
+				tx.object.clock(),
+			],
+			typeArguments: [baseCoin.type, quoteCoin.type],
+		});
+	};
 }
